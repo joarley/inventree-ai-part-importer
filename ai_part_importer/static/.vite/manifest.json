@@ -1,24 +1,24 @@
 {
-  "_DraftReviewForm-DYgqN7t5.js": {
-    "file": "assets/DraftReviewForm-DYgqN7t5.js",
+  "_DraftReviewForm-Di3BUDHW.js": {
+    "file": "assets/DraftReviewForm-Di3BUDHW.js",
     "name": "DraftReviewForm"
   },
   "src/ImportPanel.tsx": {
-    "file": "ImportPanel-DfdNhoTu.js",
+    "file": "ImportPanel-BqZl08qY.js",
     "name": "ImportPanel",
     "src": "src/ImportPanel.tsx",
     "isEntry": true,
     "imports": [
-      "_DraftReviewForm-DYgqN7t5.js"
+      "_DraftReviewForm-Di3BUDHW.js"
     ]
   },
   "src/Panel.tsx": {
-    "file": "Panel-DPmJeE9p.js",
+    "file": "Panel-D48wwAH8.js",
     "name": "Panel",
     "src": "src/Panel.tsx",
     "isEntry": true,
     "imports": [
-      "_DraftReviewForm-DYgqN7t5.js"
+      "_DraftReviewForm-Di3BUDHW.js"
     ]
   }
 }

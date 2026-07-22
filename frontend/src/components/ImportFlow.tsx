@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Alert, Button, FileInput, Stack, Text, Textarea } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 
-import { checkPluginVersion, type InvenTreePluginContext } from '@inventreedb/ui';
+import type { InvenTreePluginContext } from '@inventreedb/ui';
 
 import {
   MAX_IMAGE_UPLOAD_BYTES,
@@ -11,9 +11,9 @@ import {
   identifyPhoto,
   identifyText,
   testConnection,
-} from './api';
-import { CandidatePicker } from './components/CandidatePicker';
-import { DraftReviewForm } from './components/DraftReviewForm';
+} from '../api';
+import { CandidatePicker } from './CandidatePicker';
+import { DraftReviewForm } from './DraftReviewForm';
 
 type Step =
   | { name: 'input' }
@@ -21,7 +21,15 @@ type Step =
   | { name: 'reviewing'; candidate: DraftCandidate }
   | { name: 'done'; result: CommitResult };
 
-function AIPartImporterDashboardItem({ context }: { context: InvenTreePluginContext }) {
+interface Props {
+  context: InvenTreePluginContext;
+}
+
+/**
+ * The full "identify a component, review, create the part" flow - shared by
+ * the primary-action modal (Part list, Stock views) so it isn't duplicated.
+ */
+export function ImportFlow({ context }: Props) {
   const [text, setText] = useState('');
   const [image, setImage] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
@@ -98,8 +106,6 @@ function AIPartImporterDashboardItem({ context }: { context: InvenTreePluginCont
 
   return (
     <Stack gap="sm">
-      <Text fw={500}>Import via AI</Text>
-
       {step.name === 'input' && (
         <>
           <Button size="xs" variant="subtle" loading={testing} onClick={handleTestConnection} style={{ alignSelf: 'flex-start' }}>
@@ -158,11 +164,4 @@ function AIPartImporterDashboardItem({ context }: { context: InvenTreePluginCont
       )}
     </Stack>
   );
-}
-
-// This is the function which is called by InvenTree to render the actual dashboard
-//  component
-export function RenderAIPartImporterDashboardItem(context: InvenTreePluginContext) {
-  checkPluginVersion(context);
-  return <AIPartImporterDashboardItem context={context} />;
 }

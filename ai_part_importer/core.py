@@ -120,19 +120,19 @@ class AIPartImporter(SettingsMixin, UrlsMixin, UserInterfaceMixin, InvenTreePlug
     # User interface elements (from UserInterfaceMixin)
     # Ref: https://docs.inventree.org/en/latest/plugins/mixins/ui/
 
-    # Custom dashboard items
-    def get_ui_dashboard_items(self, request, context: dict, **kwargs):
-        """Return a list of custom dashboard items to be rendered in the InvenTree user interface."""
+    # Custom primary action - a button in the page header (e.g. on the Part
+    # list, or Stock views) that opens the identify/review/create flow in a
+    # modal. Replaces the earlier dashboard-widget approach, which was stuck
+    # in a small fixed-size grid cell and wasn't a great fit for this flow.
+    def get_ui_primary_actions(self, request, context: dict, **kwargs):
+        """Return a list of custom primary actions to be rendered in the InvenTree user interface."""
 
         return [{
-            'key': 'ai-part-importer-dashboard',
+            'key': 'ai-part-importer-action',
             'title': 'Import via AI',
-            'description': 'Identify a component from text and import it into InvenTree.',
+            'description': 'Identify a component from text/photo and import it into InvenTree.',
             'icon': 'ti:sparkles:outline',
-            'source': self.plugin_static_file('Dashboard.js:RenderAIPartImporterDashboardItem'),
-            # Without an explicit min size, dashboard items default to a tiny
-            # 2x2 grid cell - barely enough to show the title.
-            'options': {'width': 8, 'height': 8},
+            'source': self.plugin_static_file('PrimaryAction.js:RenderAIPartImporterAction'),
         }]
 
     # Custom UI panels

@@ -12,7 +12,9 @@ draft on the review screen.
 
 All planned phases (A-E) are implemented:
 
-- **Text and photo identification** - a "Import via AI" dashboard widget.
+- **Text and photo identification** - an "Import via AI" button in the page
+  header (e.g. on the Part list, or Stock views) that opens the flow in a
+  modal.
 - **Official DigiKey/Mouser enrichment** (optional) - when API credentials are
   configured, their data (datasheet, description, parameters, pricing,
   product link) overrides the AI's guesses, tagged and badged as such.
@@ -61,15 +63,17 @@ Under the plugin's settings (**Admin > Plugins > AI Part Importer**):
 
 ## Usage
 
-- **New part**: open the InvenTree dashboard - there's an **"Import via AI"**
-  widget. Type a free-text description/partial part number and/or attach a
-  photo (max 8MB, resized/recompressed server-side - this photo is only used
-  to identify the component, it is not itself saved anywhere), click
-  **Identify**, review/edit every field (each is badged by source: AI /
-  DigiKey / Mouser / Edited), pick or search a category, choose which
-  supplier links to create, what to do with the datasheet, and whether to use
-  the official product photo (when DigiKey/Mouser returned one) as the Part's
-  image, and confirm.
+- **New part**: click the **"Import via AI"** button in the page header (Part
+  list, Stock views, etc.) to open the flow in a modal. Type a free-text
+  description/partial part number and/or attach a photo (max 8MB,
+  resized/recompressed server-side - this photo is only used to identify the
+  component, it is not itself saved anywhere), click **Identify**,
+  review/edit every field (each is badged by source: AI / DigiKey / Mouser /
+  Edited), pick or search a category, choose which supplier links to create,
+  which parameters/attributes to import, what to do with the datasheet, and
+  whether to use the official product photo (when DigiKey/Mouser returned
+  one) as the Part's image, and confirm. If something similar already
+  exists, a banner points you to it instead of creating a duplicate.
 - **Existing part**: open any Part's detail page, find the **"AI Enrich"**
   panel, optionally add extra context text, click **Analyze with AI**. Fields
   the part already has are pre-filled with their *current* value (badged
@@ -97,6 +101,12 @@ InvenTree instance:
 - `importer.py: _record_audit_trail()` - assumes `Part.set_metadata(key, data)`
   exists (InvenTree's generic model-metadata mixin). Wrapped so a mismatch
   only skips the audit trail, not the commit.
+- `core.py: get_ui_primary_actions()` - assumes a primary action's `source`
+  can render an arbitrary custom component (like panels/dashboard items do),
+  not just a static link. If the button doesn't appear, or appears but does
+  nothing, that assumption may be wrong for this InvenTree version. It's also
+  currently unfiltered (shows on every page) since the exact valid
+  `location`-filtering values aren't documented anywhere I could find.
 
 ## Frontend development
 

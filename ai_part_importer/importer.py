@@ -7,6 +7,8 @@ transaction.
 """
 
 import logging
+import re
+from urllib.parse import unquote, urlparse
 
 from django.db import transaction
 
@@ -16,6 +18,22 @@ SUPPLIER_DISPLAY_NAMES = {
     'digikey': 'DigiKey',
     'mouser': 'Mouser',
 }
+
+
+def _safe_filename_from_url(url: str, default_name: str) -> str:
+    """Turn a (possibly URL-encoded, query-stringed) download URL into a
+    filename that's safe to hand to Django's file storage - it doesn't
+    URL-decode or sanitize on its own, so a literal `%7E` or similar ends up
+    baked into the stored filename otherwise."""
+
+    path = urlparse(url).path
+    name = unquote(path.rsplit('/', 1)[-1])
+    name = re.sub(r'[^A-Za-z0-9._-]', '_', name)
+
+    if not name or '.' not in name:
+        name = default_name
+
+    return name
 
 
 class CommitError(Exception):
@@ -147,7 +165,7 @@ def _apply_part_image(part, image_url: str):
         response = requests.get(image_url, timeout=30)
         response.raise_for_status()
 
-        filename = image_url.rsplit('/', 1)[-1] or 'image.jpg'
+        filename = _safe_filename_from_url(image_url, 'image.jpg')
         part.image.save(filename, ContentFile(response.content), save=True)
         return None
     except Exception as exc:  # noqa: BLE001
@@ -205,7 +223,7 @@ def _download_and_attach_datasheet(manufacturer_part, datasheet_url: str):
     response = requests.get(datasheet_url, timeout=30)
     response.raise_for_status()
 
-    filename = datasheet_url.rsplit('/', 1)[-1] or 'datasheet.pdf'
+    filename = _safe_filename_from_url(datasheet_url, 'datasheet.pdf')
     if not filename.lower().endswith('.pdf'):
         filename += '.pdf'
 

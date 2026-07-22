@@ -115,6 +115,13 @@ def commit_draft(
     else:
         warnings.append('DEBUG: no image_url was received by /commit')
 
+    if datasheet_url and datasheet_action != 'skip':
+        # Also set the Part's own link, not just the ManufacturerPart's -
+        # otherwise the datasheet is only visible by drilling into Suppliers,
+        # instead of right on the Part detail page.
+        part.link = datasheet_url
+        part.save()
+
     manufacturer_name = value_of('manufacturer')
     mpn = value_of('mpn')
 

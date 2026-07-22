@@ -156,3 +156,16 @@ export async function testConnection(context: InvenTreePluginContext): Promise<T
   const response = await context.api.get(`${BASE}/test-connection/`);
   return response.data;
 }
+
+// Sets the Part's own thumbnail/image directly through InvenTree's core Part
+// API - no custom endpoint needed on our side. Used to keep the photo that
+// was used to identify a component attached to the Part it created.
+export async function setPartImage(
+  context: InvenTreePluginContext,
+  partPk: number,
+  image: File,
+): Promise<void> {
+  const form = new FormData();
+  form.append('image', image);
+  await context.api.patch(`/api/part/${partPk}/`, form);
+}

@@ -34,8 +34,8 @@ function AIPartImporterPanel({ context }: { context: InvenTreePluginContext }) {
 
       if (draft.candidates.length === 0) {
         notifications.show({
-          title: 'Nada encontrado',
-          message: 'A IA não retornou nenhum candidato com confiança suficiente.',
+          title: 'Nothing found',
+          message: 'The AI did not return any candidate with enough confidence.',
           color: 'yellow',
         });
         return;
@@ -47,8 +47,8 @@ function AIPartImporterPanel({ context }: { context: InvenTreePluginContext }) {
         setStep({ name: 'picking', draft });
       }
     } catch (err: any) {
-      const message = err?.response?.data?.error ?? 'Falha ao analisar a peça';
-      notifications.show({ title: 'Erro', message, color: 'red' });
+      const message = err?.response?.data?.error ?? 'Failed to analyze the part';
+      notifications.show({ title: 'Error', message, color: 'red' });
     } finally {
       setLoading(false);
     }
@@ -61,8 +61,8 @@ function AIPartImporterPanel({ context }: { context: InvenTreePluginContext }) {
 
   if (!partId) {
     return (
-      <Alert color="yellow" title="Indisponível">
-        Este painel só funciona na página de detalhe de uma peça.
+      <Alert color="yellow" title="Unavailable">
+        This panel only works on a part's detail page.
       </Alert>
     );
   }
@@ -72,19 +72,19 @@ function AIPartImporterPanel({ context }: { context: InvenTreePluginContext }) {
       {step.name === 'input' && (
         <>
           <Text size="sm" c="dimmed">
-            A IA vai olhar o nome/descrição atuais desta peça (e o texto extra abaixo, se houver)
-            e sugerir dados para preencher o que estiver faltando. Nada é sobrescrito sem sua
-            confirmação.
+            The AI will look at this part's current name/description (and the extra text below,
+            if any) and suggest data to fill in whatever is missing. Nothing is overwritten
+            without your confirmation.
           </Text>
           <Textarea
-            placeholder="Contexto adicional (opcional) - ex: partnumber que você já sabe..."
+            placeholder="Additional context (optional) - e.g. a partnumber you already know..."
             value={text}
             onChange={(e) => setText(e.currentTarget.value)}
             autosize
             minRows={2}
           />
           <Button onClick={handleAnalyze} loading={loading}>
-            Analisar com IA
+            Analyze with AI
           </Button>
         </>
       )}
@@ -109,13 +109,13 @@ function AIPartImporterPanel({ context }: { context: InvenTreePluginContext }) {
       )}
 
       {step.name === 'done' && (
-        <Alert color="green" title="Pronto">
+        <Alert color="green" title="Done">
           <Stack gap="xs">
             <Text size="sm">
-              Peça #{step.result.part_pk} ({step.result.part_name}) atualizada.
+              Part #{step.result.part_pk} ({step.result.part_name}) updated.
             </Text>
             <Button size="xs" variant="default" onClick={reset}>
-              Analisar de novo
+              Analyze again
             </Button>
           </Stack>
         </Alert>

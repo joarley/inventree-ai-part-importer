@@ -10,21 +10,21 @@ interface Props {
 export function CandidatePicker({ candidates, onPick }: Props) {
   return (
     <Stack gap="xs">
-      <Text size="sm">A IA encontrou mais de uma possibilidade - escolha uma:</Text>
+      <Text size="sm">The AI found more than one possibility - pick one:</Text>
       {candidates.map((c, index) => (
         <Card key={index} withBorder padding="sm">
           <Group justify="space-between">
             <Stack gap={0}>
-              <Text fw={500}>{c.name?.value || '(sem nome)'}</Text>
+              <Text fw={500}>{c.name?.value || '(no name)'}</Text>
               <Text size="sm" c="dimmed">
                 {c.manufacturer?.value} {c.mpn?.value ? `- ${c.mpn?.value}` : ''}
               </Text>
               <Text size="xs" c="dimmed">
-                Confiança: {Math.round((c.confidence ?? 0) * 100)}%
+                Confidence: {Math.round((c.confidence ?? 0) * 100)}%
               </Text>
             </Stack>
             <Button size="xs" onClick={() => onPick(c)}>
-              Escolher
+              Pick
             </Button>
           </Group>
         </Card>

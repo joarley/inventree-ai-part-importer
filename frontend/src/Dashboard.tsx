@@ -35,14 +35,14 @@ function AIPartImporterDashboardItem({ context }: { context: InvenTreePluginCont
     try {
       const result = await testConnection(context);
       if (result.ok) {
-        notifications.show({ title: 'Conexão OK', message: 'O endpoint de IA respondeu.', color: 'green' });
+        notifications.show({ title: 'Connection OK', message: 'The AI endpoint responded.', color: 'green' });
       } else {
-        notifications.show({ title: 'Falha na conexão', message: result.error ?? 'Erro desconhecido', color: 'red' });
+        notifications.show({ title: 'Connection failed', message: result.error ?? 'Unknown error', color: 'red' });
       }
     } catch (err: any) {
       notifications.show({
-        title: 'Falha na conexão',
-        message: err?.response?.data?.error ?? 'Erro desconhecido',
+        title: 'Connection failed',
+        message: err?.response?.data?.error ?? 'Unknown error',
         color: 'red',
       });
     } finally {
@@ -57,8 +57,8 @@ function AIPartImporterDashboardItem({ context }: { context: InvenTreePluginCont
 
     if (image && image.size > MAX_IMAGE_UPLOAD_BYTES) {
       notifications.show({
-        title: 'Foto muito grande',
-        message: `Escolha uma foto de até ${MAX_IMAGE_UPLOAD_BYTES / (1024 * 1024)}MB.`,
+        title: 'Photo too large',
+        message: `Choose a photo up to ${MAX_IMAGE_UPLOAD_BYTES / (1024 * 1024)}MB.`,
         color: 'red',
       });
       return;
@@ -70,8 +70,8 @@ function AIPartImporterDashboardItem({ context }: { context: InvenTreePluginCont
 
       if (draft.candidates.length === 0) {
         notifications.show({
-          title: 'Nada encontrado',
-          message: 'A IA não retornou nenhum candidato com confiança suficiente.',
+          title: 'Nothing found',
+          message: 'The AI did not return any candidate with enough confidence.',
           color: 'yellow',
         });
         return;
@@ -83,8 +83,8 @@ function AIPartImporterDashboardItem({ context }: { context: InvenTreePluginCont
         setStep({ name: 'picking', candidates: draft.candidates });
       }
     } catch (err: any) {
-      const message = err?.response?.data?.error ?? 'Falha ao identificar o componente';
-      notifications.show({ title: 'Erro', message, color: 'red' });
+      const message = err?.response?.data?.error ?? 'Failed to identify the component';
+      notifications.show({ title: 'Error', message, color: 'red' });
     } finally {
       setLoading(false);
     }
@@ -103,24 +103,24 @@ function AIPartImporterDashboardItem({ context }: { context: InvenTreePluginCont
       {step.name === 'input' && (
         <>
           <Button size="xs" variant="subtle" loading={testing} onClick={handleTestConnection} style={{ alignSelf: 'flex-start' }}>
-            Testar conexão com a IA
+            Test AI connection
           </Button>
           <Textarea
-            placeholder="Descreva o componente, ou cole o partnumber (mesmo que parcial)..."
+            placeholder="Describe the component, or paste the partnumber (even if partial)..."
             value={text}
             onChange={(e) => setText(e.currentTarget.value)}
             autosize
             minRows={2}
           />
           <FileInput
-            placeholder="Ou envie uma foto do componente"
+            placeholder="Or upload a photo of the component"
             accept="image/*"
             value={image}
             onChange={setImage}
             clearable
           />
           <Button onClick={handleIdentify} loading={loading} disabled={!canIdentify}>
-            Identificar
+            Identify
           </Button>
         </>
       )}
@@ -136,22 +136,23 @@ function AIPartImporterDashboardItem({ context }: { context: InvenTreePluginCont
         <DraftReviewForm
           context={context}
           candidate={step.candidate}
+          sourceImage={image}
           onBack={reset}
           onCommitted={(result) => setStep({ name: 'done', result })}
         />
       )}
 
       {step.name === 'done' && (
-        <Alert color="green" title="Pronto">
+        <Alert color="green" title="Done">
           <Stack gap="xs">
             <Text size="sm">
-              Peça #{step.result.part_pk} ({step.result.part_name}) criada.
+              Part #{step.result.part_pk} ({step.result.part_name}) created.
             </Text>
             <Button size="xs" onClick={() => context.navigate(`/part/${step.result.part_pk}/`)}>
-              Ver peça
+              View part
             </Button>
             <Button size="xs" variant="default" onClick={reset}>
-              Importar outra
+              Import another
             </Button>
           </Stack>
         </Alert>

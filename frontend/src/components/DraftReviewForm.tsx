@@ -23,6 +23,7 @@ import {
   type SupplierLink,
   commitDraft,
   searchCategories,
+  setPartImage,
 } from '../api';
 import { SourceBadge } from './SourceBadge';
 
@@ -34,6 +35,9 @@ interface Props {
   mode?: 'create' | 'enrich';
   partPk?: number;
   initialCategory?: CategoryMatch | null;
+  // The photo that was used to identify this candidate, if any - gets set as
+  // the Part's own image once the Part is created.
+  sourceImage?: File | null;
 }
 
 export function DraftReviewForm({
@@ -44,6 +48,7 @@ export function DraftReviewForm({
   mode = 'create',
   partPk,
   initialCategory = null,
+  sourceImage = null,
 }: Props) {
   const [name, setName] = useState(candidate.name?.value ?? '');
   const [description, setDescription] = useState(candidate.description?.value ?? '');
@@ -86,7 +91,7 @@ export function DraftReviewForm({
       const results = await searchCategories(context, categorySearch);
       setCategoryResults(results);
     } catch {
-      notifications.show({ title: 'Erro', message: 'Falha ao buscar categorias', color: 'red' });
+      notifications.show({ title: 'Error', message: 'Failed to search categories', color: 'red' });
     } finally {
       setSearching(false);
     }
@@ -120,16 +125,33 @@ export function DraftReviewForm({
         },
       );
 
+      if (sourceImage) {
+        try {
+          await setPartImage(context, result.part_pk, sourceImage);
+        } catch {
+          notifications.show({
+            title: 'Part saved',
+            message: 'Part saved, but the photo could not be attached as its image.',
+            color: 'yellow',
+          });
+        }
+      }
+
+      // The InvenTree page we're embedded in (part detail / dashboard) has its
+      // own cached copy of this data - force it to refetch so it doesn't keep
+      // showing stale values after we've just changed them.
+      context.queryClient?.invalidateQueries?.();
+
       notifications.show({
-        title: mode === 'enrich' ? 'Peça atualizada' : 'Peça criada',
+        title: mode === 'enrich' ? 'Part updated' : 'Part created',
         message: `${result.part_name} (#${result.part_pk})`,
         color: 'green',
       });
 
       onCommitted(result);
     } catch (err: any) {
-      const message = err?.response?.data?.error ?? 'Falha ao salvar a peça';
-      notifications.show({ title: 'Erro', message, color: 'red' });
+      const message = err?.response?.data?.error ?? 'Failed to save the part';
+      notifications.show({ title: 'Error', message, color: 'red' });
     } finally {
       setSubmitting(false);
     }
@@ -138,9 +160,9 @@ export function DraftReviewForm({
   return (
     <Stack gap="sm">
       {candidate.existing_matches.length > 0 && mode === 'create' && (
-        <Alert color="yellow" title="Possível duplicata">
+        <Alert color="yellow" title="Possible duplicate">
           <Stack gap={4}>
-            <Text size="sm">Já existe algo parecido no InvenTree:</Text>
+            <Text size="sm">Something similar already exists in InvenTree:</Text>
             {candidate.existing_matches.map((m) => (
               <UnstyledButton
                 key={m.part_pk}
@@ -157,7 +179,7 @@ export function DraftReviewForm({
 
       <Group gap={4}>
         <Text size="sm" fw={500}>
-          Nome
+          Name
         </Text>
         <SourceBadge source={candidate.name?.source} />
       </Group>
@@ -165,7 +187,7 @@ export function DraftReviewForm({
 
       <Group gap={4}>
         <Text size="sm" fw={500}>
-          Descrição
+          Description
         </Text>
         <SourceBadge source={candidate.description?.source} />
       </Group>
@@ -175,7 +197,7 @@ export function DraftReviewForm({
         <Stack gap={4}>
           <Group gap={4}>
             <Text size="sm" fw={500}>
-              Fabricante
+              Manufacturer
             </Text>
             <SourceBadge source={candidate.manufacturer?.source} />
           </Group>
@@ -194,22 +216,22 @@ export function DraftReviewForm({
 
       <Stack gap={4}>
         <Text size="sm" fw={500}>
-          Categoria {candidate.category_guess ? '(sugestão da IA, só um ponto de partida para a busca)' : ''}
+          Category {candidate.category_guess ? '(AI suggestion, just a starting point for the search)' : ''}
         </Text>
         <Group>
           <TextInput
             flex={1}
             value={categorySearch}
             onChange={(e) => setCategorySearch(e.currentTarget.value)}
-            placeholder="Buscar categoria..."
+            placeholder="Search category..."
           />
           <Button variant="light" loading={searching} onClick={runCategorySearch}>
-            Buscar
+            Search
           </Button>
         </Group>
         {category && (
           <Alert color="green" py={4}>
-            Selecionada: {category.pathstring ?? category.name}
+            Selected: {category.pathstring ?? category.name}
           </Alert>
         )}
         {categoryResults.length > 0 && (
@@ -236,9 +258,9 @@ export function DraftReviewForm({
           </Anchor>
           <Radio.Group value={datasheetAction} onChange={(v) => setDatasheetAction(v as DatasheetAction)}>
             <Group>
-              <Radio value="download_attach" label="Baixar e anexar" />
-              <Radio value="link_only" label="Só guardar o link" />
-              <Radio value="skip" label="Ignorar" />
+              <Radio value="download_attach" label="Download and attach" />
+              <Radio value="link_only" label="Keep link only" />
+              <Radio value="skip" label="Skip" />
             </Group>
           </Radio.Group>
         </Stack>
@@ -247,7 +269,7 @@ export function DraftReviewForm({
       {(candidate.supplier_links ?? []).length > 0 && (
         <Stack gap={4}>
           <Text size="sm" fw={500}>
-            Fornecedores
+            Suppliers
           </Text>
           {candidate.supplier_links.map((link) => (
             <Group key={link.supplier} gap="xs">
@@ -258,7 +280,7 @@ export function DraftReviewForm({
               />
               {link.url && (
                 <Anchor href={link.url} target="_blank" size="xs">
-                  ver produto
+                  view product
                 </Anchor>
               )}
             </Group>
@@ -268,10 +290,10 @@ export function DraftReviewForm({
 
       <Group justify="flex-end">
         <Button variant="default" onClick={onBack}>
-          Voltar
+          Back
         </Button>
         <Button disabled={!canCommit} loading={submitting} onClick={handleCommit}>
-          {mode === 'enrich' ? 'Salvar alterações' : 'Confirmar e criar peça'}
+          {mode === 'enrich' ? 'Save changes' : 'Confirm and create part'}
         </Button>
       </Group>
     </Stack>

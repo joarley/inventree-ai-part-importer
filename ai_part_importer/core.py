@@ -130,6 +130,9 @@ class AIPartImporter(SettingsMixin, UrlsMixin, UserInterfaceMixin, InvenTreePlug
             'description': 'Identify a component from text and import it into InvenTree.',
             'icon': 'ti:sparkles:outline',
             'source': self.plugin_static_file('Dashboard.js:RenderAIPartImporterDashboardItem'),
+            # Without an explicit min size, dashboard items default to a tiny
+            # 2x2 grid cell - barely enough to show the title.
+            'options': {'width': 8, 'height': 8},
         }]
 
     # Custom UI panels

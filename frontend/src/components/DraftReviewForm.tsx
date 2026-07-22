@@ -134,6 +134,10 @@ export function DraftReviewForm({
         color: 'green',
       });
 
+      for (const warning of result.warnings ?? []) {
+        notifications.show({ title: 'Warning', message: warning, color: 'yellow', autoClose: false });
+      }
+
       onCommitted(result);
     } catch (err: any) {
       const message = err?.response?.data?.error ?? 'Failed to save the part';

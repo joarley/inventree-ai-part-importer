@@ -6,7 +6,11 @@ returning empty fields once a real API key is configured, compare this
 against Mouser's current API reference and adjust `_normalize_part()`.
 """
 
+import logging
+
 import requests
+
+logger = logging.getLogger('inventree_plugins.ai_part_importer')
 
 SEARCH_URL = 'https://api.mouser.com/api/v1/search/partnumber'
 
@@ -74,5 +78,10 @@ def lookup_by_mpn(*, api_key: str, mpn: str):
 
     if not parts:
         return None
+
+    # Field names in _normalize_part() are best-effort/unverified (see module
+    # docstring) - log the raw part so a mismatch (e.g. an empty image_url)
+    # can be root-caused from the container logs instead of guessing blind.
+    logger.info('Mouser raw part for %r: %s', mpn, parts[0])
 
     return _normalize_part(parts[0])

@@ -2,7 +2,8 @@
 
 Only called from the /commit endpoint, after the user has reviewed and edited
 everything in the frontend - this module does no AI/network calls except the
-one-shot datasheet download (when requested), inside a single transaction.
+one-shot datasheet/image download (when requested), inside a single
+transaction.
 """
 
 import logging
@@ -42,9 +43,15 @@ def commit_draft(
     Only the plain `value` of each tagged field is used here - source/verified
     tags are UI/audit concerns already acted on by the time we get here (the
     frontend review screen is what a user actually confirmed).
+
+    Returns (part, warnings) - `warnings` is a list of human-readable strings
+    for anything that didn't fully succeed (e.g. an image/datasheet that
+    couldn't be downloaded) without blocking the rest of the commit.
     """
 
     from part.models import Part, PartCategory
+
+    warnings: list = []
 
     def value_of(field_name):
         field = resolved.get(field_name)
@@ -79,7 +86,9 @@ def commit_draft(
         )
 
     if image_url:
-        _apply_part_image(part, image_url)
+        error = _apply_part_image(part, image_url)
+        if error:
+            warnings.append(f'Could not set part image: {error}')
 
     manufacturer_name = value_of('manufacturer')
     mpn = value_of('mpn')
@@ -89,14 +98,16 @@ def commit_draft(
         manufacturer_part = _get_or_create_manufacturer_part(part, manufacturer_name, mpn)
 
         if datasheet_url and datasheet_action != 'skip':
-            _apply_datasheet(manufacturer_part, datasheet_url, datasheet_action)
+            error = _apply_datasheet(manufacturer_part, datasheet_url, datasheet_action)
+            if error:
+                warnings.append(f'Could not attach datasheet: {error}')
 
     for link in supplier_links or []:
         _create_supplier_part(part, manufacturer_part, link)
 
     _record_audit_trail(part, resolved=resolved, user=user)
 
-    return part
+    return part, warnings
 
 
 def _record_audit_trail(part, *, resolved: dict, user):
@@ -119,8 +130,8 @@ def _record_audit_trail(part, *, resolved: dict, user):
 
 def _apply_part_image(part, image_url: str):
     """Download the supplier's official product photo and set it as the
-    Part's own image. Never allowed to fail the commit - a bad/unreachable
-    image URL just means the Part is created without a picture."""
+    Part's own image. Never allowed to fail the commit - returns an error
+    string (instead of raising) so the caller can surface it as a warning."""
 
     try:
         import requests
@@ -131,8 +142,10 @@ def _apply_part_image(part, image_url: str):
 
         filename = image_url.rsplit('/', 1)[-1] or 'image.jpg'
         part.image.save(filename, ContentFile(response.content), save=True)
+        return None
     except Exception as exc:  # noqa: BLE001
         logger.warning('Could not download/set part image from %s: %s', image_url, exc)
+        return str(exc)
 
 
 def _get_or_create_manufacturer_part(part, manufacturer_name: str, mpn: str):
@@ -156,20 +169,26 @@ def _get_or_create_manufacturer_part(part, manufacturer_name: str, mpn: str):
 
 
 def _apply_datasheet(manufacturer_part, datasheet_url: str, datasheet_action: str):
-    """Either just store the link, or download the PDF and attach it."""
+    """Either just store the link, or download the PDF and attach it. Returns
+    an error string on failure (falling back to just storing the link),
+    or None on success."""
 
     if datasheet_action == 'link_only':
         manufacturer_part.link = datasheet_url
         manufacturer_part.save()
-        return
+        return None
 
     if datasheet_action == 'download_attach':
         try:
             _download_and_attach_datasheet(manufacturer_part, datasheet_url)
+            return None
         except Exception as exc:  # noqa: BLE001 - never let a download failure block the commit
             logger.warning('Datasheet download/attach failed for %s: %s', datasheet_url, exc)
             manufacturer_part.link = datasheet_url
             manufacturer_part.save()
+            return str(exc)
+
+    return None
 
 
 def _download_and_attach_datasheet(manufacturer_part, datasheet_url: str):

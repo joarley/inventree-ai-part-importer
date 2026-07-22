@@ -97,6 +97,7 @@ export async function enrichPart(
 export interface CommitResult {
   part_pk: number;
   part_name: string;
+  warnings: string[];
 }
 
 export type DatasheetAction = 'link_only' | 'download_attach' | 'skip';

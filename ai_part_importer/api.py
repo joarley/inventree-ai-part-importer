@@ -93,7 +93,7 @@ class CommitView(APIView):
         serializer.is_valid(raise_exception=True)
 
         try:
-            part = commit_draft(
+            part, warnings = commit_draft(
                 resolved=serializer.validated_data['resolved'],
                 category_pk=serializer.validated_data['category_pk'],
                 user=request.user,
@@ -106,7 +106,10 @@ class CommitView(APIView):
         except CommitError as exc:
             return Response({'error': str(exc)}, status=400)
 
-        return Response({'part_pk': part.pk, 'part_name': part.name}, status=201)
+        return Response(
+            {'part_pk': part.pk, 'part_name': part.name, 'warnings': warnings},
+            status=201,
+        )
 
 
 class EnrichView(PluginSettingsMixin, APIView):

@@ -8,9 +8,12 @@ current API reference/Swagger and adjust the field names in
 `_normalize_product()` accordingly.
 """
 
+import logging
 import time
 
 import requests
+
+logger = logging.getLogger('inventree_plugins.ai_part_importer')
 
 TOKEN_URL = 'https://api.digikey.com/v1/oauth2/token'
 SEARCH_URL = 'https://api.digikey.com/products/v4/search/keyword'
@@ -114,5 +117,11 @@ def lookup_by_mpn(*, client_id: str, client_secret: str, mpn: str):
 
     if not products:
         return None
+
+    # Field names in _normalize_product() are best-effort/unverified (see
+    # module docstring) - log the raw product so a mismatch (e.g. an empty
+    # image_url) can be root-caused from the container logs instead of
+    # guessing blind.
+    logger.info('DigiKey raw product for %r: %s', mpn, products[0])
 
     return _normalize_product(products[0])

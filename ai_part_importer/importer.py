@@ -31,6 +31,7 @@ def commit_draft(
     supplier_links: list = None,
     datasheet_url: str = None,
     datasheet_action: str = 'skip',
+    image_url: str = None,
 ):
     """Create a Part (+ ManufacturerPart, + SupplierParts, + datasheet), or,
     when `part_pk` is given, apply the same resolved fields to that existing
@@ -77,6 +78,9 @@ def commit_draft(
             purchaseable=True,
         )
 
+    if image_url:
+        _apply_part_image(part, image_url)
+
     manufacturer_name = value_of('manufacturer')
     mpn = value_of('mpn')
 
@@ -111,6 +115,24 @@ def _record_audit_trail(part, *, resolved: dict, user):
         )
     except Exception as exc:  # noqa: BLE001
         logger.warning('Could not record AI Part Importer audit metadata: %s', exc)
+
+
+def _apply_part_image(part, image_url: str):
+    """Download the supplier's official product photo and set it as the
+    Part's own image. Never allowed to fail the commit - a bad/unreachable
+    image URL just means the Part is created without a picture."""
+
+    try:
+        import requests
+        from django.core.files.base import ContentFile
+
+        response = requests.get(image_url, timeout=30)
+        response.raise_for_status()
+
+        filename = image_url.rsplit('/', 1)[-1] or 'image.jpg'
+        part.image.save(filename, ContentFile(response.content), save=True)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning('Could not download/set part image from %s: %s', image_url, exc)
 
 
 def _get_or_create_manufacturer_part(part, manufacturer_name: str, mpn: str):

@@ -136,7 +136,6 @@ function AIPartImporterDashboardItem({ context }: { context: InvenTreePluginCont
         <DraftReviewForm
           context={context}
           candidate={step.candidate}
-          sourceImage={image}
           onBack={reset}
           onCommitted={(result) => setStep({ name: 'done', result })}
         />

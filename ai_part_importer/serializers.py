@@ -39,6 +39,7 @@ class CommitRequestSerializer(serializers.Serializer):
     datasheet_action = serializers.ChoiceField(
         choices=['link_only', 'download_attach', 'skip'], required=False, default='skip'
     )
+    image_url = serializers.CharField(required=False, allow_blank=True, allow_null=True, default=None)
 
 
 class EnrichRequestSerializer(serializers.Serializer):

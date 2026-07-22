@@ -135,6 +135,13 @@ def enrich_candidate(candidate: dict, *, settings: dict) -> dict:
                 'verified': True,
             }
 
+        if primary.get('image_url'):
+            candidate['image_url'] = {
+                'value': primary['image_url'],
+                'source': primary_source,
+                'verified': True,
+            }
+
         candidate['parameters'] = _merge_parameters(
             candidate['parameters'], primary.get('parameters') or [], primary_source
         )

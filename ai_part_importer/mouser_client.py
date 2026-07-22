@@ -31,6 +31,7 @@ def _normalize_part(part: dict) -> dict:
         'manufacturer': part.get('Manufacturer'),
         'description': part.get('Description'),
         'datasheet_url': part.get('DataSheetUrl'),
+        'image_url': part.get('ImagePath'),
         'product_url': part.get('ProductDetailUrl'),
         'sku': part.get('MouserPartNumber'),
         'parameters': parameters,

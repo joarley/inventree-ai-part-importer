@@ -43,6 +43,7 @@ export interface DraftCandidate {
   description: TaggedField | null;
   category_guess: { path: string; source: string } | null;
   datasheet_url: TaggedField | null;
+  image_url: TaggedField | null;
   parameters: { name: string; value: string; source: string }[];
   supplier_links: SupplierLink[];
   existing_matches: ExistingMatch[];
@@ -105,6 +106,7 @@ export interface CommitOptions {
   supplierLinks?: SupplierLink[];
   datasheetUrl?: string | null;
   datasheetAction?: DatasheetAction;
+  imageUrl?: string | null;
 }
 
 export async function commitDraft(
@@ -120,6 +122,7 @@ export async function commitDraft(
     supplier_links: options.supplierLinks ?? [],
     datasheet_url: options.datasheetUrl ?? null,
     datasheet_action: options.datasheetAction ?? 'skip',
+    image_url: options.imageUrl ?? null,
   });
   return response.data;
 }
@@ -155,17 +158,4 @@ export interface TestConnectionResult {
 export async function testConnection(context: InvenTreePluginContext): Promise<TestConnectionResult> {
   const response = await context.api.get(`${BASE}/test-connection/`);
   return response.data;
-}
-
-// Sets the Part's own thumbnail/image directly through InvenTree's core Part
-// API - no custom endpoint needed on our side. Used to keep the photo that
-// was used to identify a component attached to the Part it created.
-export async function setPartImage(
-  context: InvenTreePluginContext,
-  partPk: number,
-  image: File,
-): Promise<void> {
-  const form = new FormData();
-  form.append('image', image);
-  await context.api.patch(`/api/part/${partPk}/`, form);
 }

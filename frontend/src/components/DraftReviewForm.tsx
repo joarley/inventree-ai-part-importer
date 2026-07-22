@@ -5,6 +5,7 @@ import {
   Button,
   Checkbox,
   Group,
+  Image,
   Radio,
   Stack,
   Text,
@@ -23,7 +24,6 @@ import {
   type SupplierLink,
   commitDraft,
   searchCategories,
-  setPartImage,
 } from '../api';
 import { SourceBadge } from './SourceBadge';
 
@@ -35,9 +35,6 @@ interface Props {
   mode?: 'create' | 'enrich';
   partPk?: number;
   initialCategory?: CategoryMatch | null;
-  // The photo that was used to identify this candidate, if any - gets set as
-  // the Part's own image once the Part is created.
-  sourceImage?: File | null;
 }
 
 export function DraftReviewForm({
@@ -48,7 +45,6 @@ export function DraftReviewForm({
   mode = 'create',
   partPk,
   initialCategory = null,
-  sourceImage = null,
 }: Props) {
   const [name, setName] = useState(candidate.name?.value ?? '');
   const [description, setDescription] = useState(candidate.description?.value ?? '');
@@ -68,6 +64,7 @@ export function DraftReviewForm({
   const [datasheetAction, setDatasheetAction] = useState<DatasheetAction>(
     candidate.datasheet_url ? 'link_only' : 'skip',
   );
+  const [useOfficialImage, setUseOfficialImage] = useState(Boolean(candidate.image_url));
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -122,20 +119,9 @@ export function DraftReviewForm({
           supplierLinks,
           datasheetUrl: candidate.datasheet_url?.value ?? null,
           datasheetAction,
+          imageUrl: useOfficialImage ? candidate.image_url?.value ?? null : null,
         },
       );
-
-      if (sourceImage) {
-        try {
-          await setPartImage(context, result.part_pk, sourceImage);
-        } catch {
-          notifications.show({
-            title: 'Part saved',
-            message: 'Part saved, but the photo could not be attached as its image.',
-            color: 'yellow',
-          });
-        }
-      }
 
       // The InvenTree page we're embedded in (part detail / dashboard) has its
       // own cached copy of this data - force it to refetch so it doesn't keep
@@ -263,6 +249,23 @@ export function DraftReviewForm({
               <Radio value="skip" label="Skip" />
             </Group>
           </Radio.Group>
+        </Stack>
+      )}
+
+      {candidate.image_url?.value && (
+        <Stack gap={4}>
+          <Group gap={4}>
+            <Text size="sm" fw={500}>
+              Product Image
+            </Text>
+            <SourceBadge source={candidate.image_url.source} />
+          </Group>
+          <Image src={candidate.image_url.value} alt="Product" w={120} h={120} fit="contain" radius="sm" />
+          <Checkbox
+            checked={useOfficialImage}
+            onChange={(e) => setUseOfficialImage(e.currentTarget.checked)}
+            label="Use as part image"
+          />
         </Stack>
       )}
 

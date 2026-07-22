@@ -101,6 +101,7 @@ class CommitView(APIView):
                 supplier_links=serializer.validated_data['supplier_links'],
                 datasheet_url=serializer.validated_data['datasheet_url'],
                 datasheet_action=serializer.validated_data['datasheet_action'],
+                image_url=serializer.validated_data['image_url'],
             )
         except CommitError as exc:
             return Response({'error': str(exc)}, status=400)

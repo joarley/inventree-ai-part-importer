@@ -38,6 +38,7 @@ def _build_candidate(raw: dict) -> dict:
             if raw.get('category_guess') else None
         ),
         'datasheet_url': None,
+        'image_url': None,
         'parameters': parameters,
         'supplier_links': [],
         'existing_matches': search_existing(mpn=mpn, manufacturer=manufacturer, name=name),

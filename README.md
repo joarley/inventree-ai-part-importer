@@ -18,8 +18,11 @@ All planned phases (A-E) are implemented:
   product link) overrides the AI's guesses, tagged and badged as such.
 - **"AI Enrich" panel** on the Part detail page, to fill gaps on an existing
   part without overwriting fields it already has.
-- A "Testar conexão" button and a lightweight audit trail (which fields came
-  from the AI vs. an official API vs. you, stored in the Part's metadata).
+- A "Test AI connection" button and a lightweight audit trail (which fields
+  came from the AI vs. an official API vs. you, stored in the Part's
+  metadata).
+- When DigiKey/Mouser return an official product photo, it can be downloaded
+  and set as the Part's own image on commit.
 
 **Not yet exercised against a real DigiKey/Mouser account or a real InvenTree
 Attachment model** - see "Known unverified integration points" below before
@@ -60,12 +63,15 @@ Under the plugin's settings (**Admin > Plugins > AI Part Importer**):
 
 - **New part**: open the InvenTree dashboard - there's an **"Import via AI"**
   widget. Type a free-text description/partial part number and/or attach a
-  photo (max 8MB, resized/recompressed server-side), click **Identificar**,
-  review/edit every field (each is badged by source: AI / DigiKey / Mouser /
-  Edited), pick or search a category, choose which supplier links to create
-  and what to do with the datasheet, and confirm.
+  photo (max 8MB, resized/recompressed server-side - this photo is only used
+  to identify the component, it is not itself saved anywhere), click
+  **Identify**, review/edit every field (each is badged by source: AI /
+  DigiKey / Mouser / Edited), pick or search a category, choose which
+  supplier links to create, what to do with the datasheet, and whether to use
+  the official product photo (when DigiKey/Mouser returned one) as the Part's
+  image, and confirm.
 - **Existing part**: open any Part's detail page, find the **"AI Enrich"**
-  panel, optionally add extra context text, click **Analisar com IA**. Fields
+  panel, optionally add extra context text, click **Analyze with AI**. Fields
   the part already has are pre-filled with their *current* value (badged
   "Current") rather than silently replaced - you decide whether to keep or
   overwrite them before saving.
@@ -78,10 +84,11 @@ available while building this) - double-check them against your real
 InvenTree instance:
 
 - `digikey_client.py` / `mouser_client.py` - the exact JSON field names in
-  DigiKey's Product Information API v4 and Mouser's Search API response.
-  If enrichment silently returns no data once you add real credentials,
-  compare `_normalize_product()` / `_normalize_part()` against the actual
-  response bodies and adjust the field names.
+  DigiKey's Product Information API v4 and Mouser's Search API response
+  (including the product image field - `PhotoUrl` for DigiKey, `ImagePath`
+  for Mouser). If enrichment silently returns no data (or no image) once you
+  add real credentials, compare `_normalize_product()` / `_normalize_part()`
+  against the actual response bodies and adjust the field names.
 - `importer.py: _download_and_attach_datasheet()` - assumes InvenTree 1.x's
   generic `common.models.Attachment` model (`model_type='manufacturerpart'`,
   `model_id=...`). If your instance uses a different attachment model shape,

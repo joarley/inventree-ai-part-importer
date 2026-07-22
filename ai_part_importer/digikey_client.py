@@ -71,6 +71,7 @@ def _normalize_product(product: dict) -> dict:
         'manufacturer': (product.get('Manufacturer') or {}).get('Name'),
         'description': (product.get('Description') or {}).get('ProductDescription'),
         'datasheet_url': product.get('DatasheetUrl'),
+        'image_url': product.get('PhotoUrl'),
         'product_url': product.get('ProductUrl'),
         'sku': first_variation.get('DigiKeyProductNumber'),
         'parameters': parameters,

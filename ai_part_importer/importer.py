@@ -85,10 +85,17 @@ def commit_draft(
             purchaseable=True,
         )
 
+    # TODO: remove this DEBUG block once image handling is confirmed working
+    # end-to-end - server-side logging has been unreliable to inspect here,
+    # so route the outcome through the same warnings list the UI already shows.
     if image_url:
         error = _apply_part_image(part, image_url)
         if error:
             warnings.append(f'Could not set part image: {error}')
+        else:
+            warnings.append(f'DEBUG: part image was set successfully from {image_url}')
+    else:
+        warnings.append('DEBUG: no image_url was received by /commit')
 
     manufacturer_name = value_of('manufacturer')
     mpn = value_of('mpn')

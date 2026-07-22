@@ -132,9 +132,13 @@ def commit_draft(
         _create_supplier_part(part, manufacturer_part, link)
 
     if parameters:
-        failed = _apply_parameters(part, parameters)
-        if failed:
-            warnings.append(f'Could not import {failed} parameter(s) - see part manually')
+        try:
+            failed = _apply_parameters(part, parameters)
+            if failed:
+                warnings.append(f'Could not import {failed} parameter(s) - see part manually')
+        except Exception as exc:  # noqa: BLE001 - never let this block the rest of the commit
+            logger.warning('Could not import parameters: %s', exc)
+            warnings.append(f'Could not import parameters: {exc}')
 
     _record_audit_trail(part, resolved=resolved, user=user)
 
@@ -248,14 +252,22 @@ def _download_and_attach_datasheet(manufacturer_part, datasheet_url: str):
 
 
 def _apply_parameters(part, parameters: list) -> int:
-    """Import {"name", "value"} attribute pairs as PartParameters, creating
-    the PartParameterTemplate if it doesn't exist yet. Never overwrites a
-    parameter the Part already has a value for (same "don't silently replace
-    existing data" rule used for enrich mode elsewhere). Returns how many
-    entries failed to import (0 if all went fine)."""
+    """Import {"name", "value"} attribute pairs as Parameters, creating the
+    ParameterTemplate if it doesn't exist yet. Never overwrites a parameter
+    the Part already has a value for (same "don't silently replace existing
+    data" rule used for enrich mode elsewhere). Returns how many entries
+    failed to import (0 if all went fine).
 
-    from part.models import PartParameter, PartParameterTemplate
+    InvenTree 1.4+ replaced the old part-specific PartParameter/
+    PartParameterTemplate models with generic common.models.Parameter/
+    ParameterTemplate (using a ContentType + object id, like Attachment).
+    """
 
+    from django.contrib.contenttypes.models import ContentType
+
+    from common.models import Parameter, ParameterTemplate
+
+    part_content_type = ContentType.objects.get_for_model(part.__class__)
     failed = 0
 
     for p in parameters:
@@ -266,9 +278,13 @@ def _apply_parameters(part, parameters: list) -> int:
             continue
 
         try:
-            template, _created = PartParameterTemplate.objects.get_or_create(name=name)
-            PartParameter.objects.get_or_create(
-                part=part,
+            template, _created = ParameterTemplate.objects.get_or_create(
+                name=name,
+                defaults={'model_type': part_content_type},
+            )
+            Parameter.objects.get_or_create(
+                model_type=part_content_type,
+                model_id=part.pk,
                 template=template,
                 defaults={'data': value},
             )
@@ -310,6 +326,18 @@ def _create_supplier_part(part, manufacturer_part, link: dict):
     _create_price_breaks(supplier_part, link.get('price_breaks') or [])
 
 
+def _clean_decimal(value) -> str:
+    """Strip currency symbols/thousands separators etc. from a price string
+    (DigiKey/Mouser return things like "$41.07") so it parses as a plain
+    decimal number."""
+
+    if isinstance(value, (int, float)):
+        return str(value)
+
+    cleaned = re.sub(r'[^0-9.\-]', '', str(value or ''))
+    return cleaned
+
+
 def _create_price_breaks(supplier_part, price_breaks: list):
     try:
         from company.models import SupplierPriceBreak
@@ -319,9 +347,9 @@ def _create_price_breaks(supplier_part, price_breaks: list):
 
     for pb in price_breaks:
         quantity = pb.get('quantity')
-        price = pb.get('price')
+        price = _clean_decimal(pb.get('price'))
 
-        if quantity is None or price is None:
+        if quantity is None or not price:
             continue
 
         try:

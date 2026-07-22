@@ -126,6 +126,10 @@ def lookup_by_mpn(*, client_id: str, client_secret: str, mpn: str):
     # module docstring) - log the raw product so a mismatch (e.g. an empty
     # image_url) can be root-caused from the container logs instead of
     # guessing blind.
-    logger.info('DigiKey raw product for %r: %s', mpn, products[0])
+    # Using .warning() here, not .info() - this deployment's logging appears
+    # to filter out INFO-level records (an earlier .info() version of this
+    # line never once showed up in container logs), so anything meant to be
+    # inspectable via `docker compose logs` needs to be at WARNING or above.
+    logger.warning('DigiKey raw product for %r: %s', mpn, products[0])
 
     return _normalize_product(products[0])

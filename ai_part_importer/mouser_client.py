@@ -86,6 +86,9 @@ def lookup_by_mpn(*, api_key: str, mpn: str):
     # Field names in _normalize_part() are best-effort/unverified (see module
     # docstring) - log the raw part so a mismatch (e.g. an empty image_url)
     # can be root-caused from the container logs instead of guessing blind.
-    logger.info('Mouser raw part for %r: %s', mpn, parts[0])
+    # Using .warning() here, not .info() - this deployment's logging appears
+    # to filter out INFO-level records, so anything meant to be inspectable
+    # via `docker compose logs` needs to be at WARNING or above.
+    logger.warning('Mouser raw part for %r: %s', mpn, parts[0])
 
     return _normalize_part(parts[0])

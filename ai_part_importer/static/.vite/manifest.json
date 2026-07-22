@@ -1,0 +1,24 @@
+{
+  "_DraftReviewForm-C7f_yw0o.js": {
+    "file": "assets/DraftReviewForm-C7f_yw0o.js",
+    "name": "DraftReviewForm"
+  },
+  "src/Dashboard.tsx": {
+    "file": "Dashboard-DF3g7P6V.js",
+    "name": "Dashboard",
+    "src": "src/Dashboard.tsx",
+    "isEntry": true,
+    "imports": [
+      "_DraftReviewForm-C7f_yw0o.js"
+    ]
+  },
+  "src/Panel.tsx": {
+    "file": "Panel-CmK3wdRY.js",
+    "name": "Panel",
+    "src": "src/Panel.tsx",
+    "isEntry": true,
+    "imports": [
+      "_DraftReviewForm-C7f_yw0o.js"
+    ]
+  }
+}

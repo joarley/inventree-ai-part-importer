@@ -1,6 +1,3 @@
 # Node modules
 node_modules
 *.tsbuildinfo
-
-# Compiled static code
-static

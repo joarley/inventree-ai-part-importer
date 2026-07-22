@@ -12,9 +12,8 @@ draft on the review screen.
 
 All planned phases (A-E) are implemented:
 
-- **Text and photo identification** - an "Import via AI" button in the page
-  header (e.g. on the Part list, or Stock views) that opens the flow in a
-  modal.
+- **Text and photo identification** - an "Import via AI" panel/tab, shown
+  when browsing Parts (a category) or Stock (a location).
 - **Official DigiKey/Mouser enrichment** (optional) - when API credentials are
   configured, their data (datasheet, description, parameters, pricing,
   product link) overrides the AI's guesses, tagged and badged as such.
@@ -63,9 +62,9 @@ Under the plugin's settings (**Admin > Plugins > AI Part Importer**):
 
 ## Usage
 
-- **New part**: click the **"Import via AI"** button in the page header (Part
-  list, Stock views, etc.) to open the flow in a modal. Type a free-text
-  description/partial part number and/or attach a photo (max 8MB,
+- **New part**: while browsing a Part category or a Stock location, open the
+  **"Import via AI"** tab/panel. Type a free-text description/partial part
+  number and/or attach a photo (max 8MB,
   resized/recompressed server-side - this photo is only used to identify the
   component, it is not itself saved anywhere), click **Identify**,
   review/edit every field (each is badged by source: AI / DigiKey / Mouser /
@@ -101,12 +100,15 @@ InvenTree instance:
 - `importer.py: _record_audit_trail()` - assumes `Part.set_metadata(key, data)`
   exists (InvenTree's generic model-metadata mixin). Wrapped so a mismatch
   only skips the audit trail, not the commit.
-- `core.py: get_ui_primary_actions()` - assumes a primary action's `source`
-  can render an arbitrary custom component (like panels/dashboard items do),
-  not just a static link. If the button doesn't appear, or appears but does
-  nothing, that assumption may be wrong for this InvenTree version. It's also
-  currently unfiltered (shows on every page) since the exact valid
-  `location`-filtering values aren't documented anywhere I could find.
+- `core.py: get_ui_panels()` - the "Import via AI" panel is shown for
+  `target_model in ('partcategory', 'stocklocation')`, guessed from the
+  request patterns seen in server logs (`?target_model=partcategory`,
+  `?target_model=stocklocation`) rather than from documented, confirmed
+  values - if it doesn't show up where expected, that's the first thing to
+  check. (A `get_ui_primary_actions` header-button approach was tried first
+  and abandoned - its `source` function is invoked as a plain click handler
+  with the return value discarded, not rendered into the page, so it never
+  displayed anything.)
 
 ## Frontend development
 

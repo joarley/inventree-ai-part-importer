@@ -46,7 +46,7 @@ export default defineConfig({
     rollupOptions: {
       preserveEntrySignatures: "exports-only",
       input: [
-        './src/PrimaryAction.tsx',
+        './src/ImportPanel.tsx',
         './src/Panel.tsx',
         // Settings.tsx isn't needed - the auto-generated settings page
         // (from the SETTINGS dict in core.py) already covers configuration.

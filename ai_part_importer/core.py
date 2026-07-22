@@ -120,33 +120,36 @@ class AIPartImporter(SettingsMixin, UrlsMixin, UserInterfaceMixin, InvenTreePlug
     # User interface elements (from UserInterfaceMixin)
     # Ref: https://docs.inventree.org/en/latest/plugins/mixins/ui/
 
-    # Custom primary action - a button in the page header (e.g. on the Part
-    # list, or Stock views) that opens the identify/review/create flow in a
-    # modal. Replaces the earlier dashboard-widget approach, which was stuck
-    # in a small fixed-size grid cell and wasn't a great fit for this flow.
-    def get_ui_primary_actions(self, request, context: dict, **kwargs):
-        """Return a list of custom primary actions to be rendered in the InvenTree user interface."""
-
-        return [{
-            'key': 'ai-part-importer-action',
-            'title': 'Import via AI',
-            'description': 'Identify a component from text/photo and import it into InvenTree.',
-            'icon': 'ti:sparkles:outline',
-            'source': self.plugin_static_file('PrimaryAction.js:RenderAIPartImporterAction'),
-        }]
-
-    # Custom UI panels
+    # Custom UI panels.
+    #
+    # A "primary action" (button in the page header) was tried first, but its
+    # `source` function turned out to be invoked as a plain click handler with
+    # its return value discarded - not rendered into the page - so it never
+    # actually showed anything. Panels are the mechanism confirmed to render a
+    # full custom component (the "AI Enrich" panel below already does), so the
+    # import flow is exposed the same way: as its own tab wherever it's useful.
     def get_ui_panels(self, request, context: dict, **kwargs):
         """Return a list of custom panels to be rendered in the InvenTree user interface."""
 
-        if context.get('target_model') != 'part':
-            return []
+        target_model = context.get('target_model')
 
-        return [{
-            'key': 'ai-part-importer-enrich',
-            'title': 'AI Enrich',
-            'description': 'Fill in missing data on this part using AI (and DigiKey/Mouser, if configured).',
-            'icon': 'ti:sparkles:outline',
-            'source': self.plugin_static_file('Panel.js:RenderAIPartImporterPanel'),
-        }]
+        if target_model == 'part':
+            return [{
+                'key': 'ai-part-importer-enrich',
+                'title': 'AI Enrich',
+                'description': 'Fill in missing data on this part using AI (and DigiKey/Mouser, if configured).',
+                'icon': 'ti:sparkles:outline',
+                'source': self.plugin_static_file('Panel.js:RenderAIPartImporterPanel'),
+            }]
+
+        if target_model in ('partcategory', 'stocklocation'):
+            return [{
+                'key': 'ai-part-importer-import',
+                'title': 'Import via AI',
+                'description': 'Identify a component from text/photo and import it into InvenTree.',
+                'icon': 'ti:sparkles:outline',
+                'source': self.plugin_static_file('ImportPanel.js:RenderAIPartImporterImportPanel'),
+            }]
+
+        return []
 

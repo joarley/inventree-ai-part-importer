@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Alert, Button, FileInput, Stack, Text, Textarea } from '@mantine/core';
+import { useMemo, useState } from 'react';
+import { Alert, Button, FileInput, Group, Image, Stack, Text, Textarea } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 
 import type { InvenTreePluginContext } from '@inventreedb/ui';
@@ -12,6 +12,7 @@ import {
   identifyText,
   testConnection,
 } from '../api';
+import { CameraCapture } from './CameraCapture';
 import { CandidatePicker } from './CandidatePicker';
 import { DraftReviewForm } from './DraftReviewForm';
 
@@ -37,6 +38,7 @@ export function ImportFlow({ context }: Props) {
   const [step, setStep] = useState<Step>({ name: 'input' });
 
   const canIdentify = Boolean(text.trim()) || Boolean(image);
+  const imagePreviewUrl = useMemo(() => (image ? URL.createObjectURL(image) : null), [image]);
 
   const handleTestConnection = async () => {
     setTesting(true);
@@ -125,6 +127,18 @@ export function ImportFlow({ context }: Props) {
             onChange={setImage}
             clearable
           />
+          <Text size="xs" c="dimmed">
+            or capture one from a camera connected to this PC:
+          </Text>
+          <CameraCapture onCapture={setImage} />
+          {image && imagePreviewUrl && (
+            <Group gap="xs">
+              <Image src={imagePreviewUrl} alt="Preview" w={60} h={60} fit="contain" radius="sm" />
+              <Text size="sm" c="dimmed">
+                {image.name}
+              </Text>
+            </Group>
+          )}
           <Button onClick={handleIdentify} loading={loading} disabled={!canIdentify}>
             Identify
           </Button>

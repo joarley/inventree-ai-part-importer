@@ -65,9 +65,10 @@ Under the plugin's settings (**Admin > Plugins > AI Part Importer**):
 - **New part**: while browsing a Part category or a Stock location, click the
   **"Import via AI"** tab/panel - it opens the flow directly in a modal (no
   extra click needed). Type a free-text description/partial part number
-  and/or attach a photo (max 8MB,
-  resized/recompressed server-side - this photo is only used to identify the
-  component, it is not itself saved anywhere), click **Identify**,
+  and/or attach a photo (max 8MB, resized/recompressed server-side - this
+  photo is only used to identify the component, it is not itself saved
+  anywhere) - either upload a file, or click **Use camera** to capture one
+  from a webcam attached to the PC, click **Identify**,
   review/edit every field (each is badged by source: AI / DigiKey / Mouser /
   Edited), pick or search a category, choose which supplier links to create,
   which parameters/attributes to import, what to do with the datasheet, and
@@ -110,6 +111,12 @@ InvenTree instance:
   and abandoned - its `source` function is invoked as a plain click handler
   with the return value discarded, not rendered into the page, so it never
   displayed anything.)
+- `components/CameraCapture.tsx` - uses the standard `navigator.mediaDevices.
+  getUserMedia()` browser API, which requires a secure context (HTTPS - the
+  instance already uses it) and needs to actually be reachable from wherever
+  InvenTree mounts plugin UI (e.g. if it's loaded inside a sandboxed iframe
+  without `allow="camera"`, the browser will deny access). If clicking "Use
+  camera" shows a permission/access error, that's the first thing to check.
 
 ## Frontend development
 

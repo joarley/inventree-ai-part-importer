@@ -28,7 +28,7 @@ classifiers = [
     "Framework :: InvenTree",
 ]
 [project.urls]
-Homepage = "https://github.com/yourname/inventree-ai-part-importer"
+Homepage = "https://github.com/joarley/inventree-ai-part-importer"
 
 [project.entry-points."inventree_plugins"]
 AIPartImporter = "ai_part_importer.core:AIPartImporter"

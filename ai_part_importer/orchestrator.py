@@ -51,6 +51,7 @@ def _has_official_credentials(settings) -> bool:
     return bool(
         (settings.get('DIGIKEY_CLIENT_ID') and settings.get('DIGIKEY_CLIENT_SECRET'))
         or settings.get('MOUSER_API_KEY')
+        or settings.get('DATASHEETS_COM_API_KEY')
     )
 
 

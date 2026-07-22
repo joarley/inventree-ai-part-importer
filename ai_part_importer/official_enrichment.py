@@ -10,7 +10,7 @@ of the hybrid strategy.
 import logging
 import time
 
-from . import digikey_client, mouser_client
+from . import datasheets_client, digikey_client, mouser_client
 
 logger = logging.getLogger('inventree_plugins.ai_part_importer')
 
@@ -63,6 +63,22 @@ def _lookup_mouser(settings, mpn):
         )
     except mouser_client.MouserClientError as exc:
         logger.warning('Mouser lookup failed for %s: %s', mpn, exc)
+        return None
+
+
+def _lookup_datasheets_com(settings, mpn):
+    api_key = settings.get('DATASHEETS_COM_API_KEY')
+
+    if not api_key:
+        return None
+
+    try:
+        return _cached_lookup(
+            ('datasheets.com', mpn),
+            lambda: datasheets_client.lookup_by_mpn(api_key=api_key, mpn=mpn),
+        )
+    except datasheets_client.DatasheetsComClientError as exc:
+        logger.warning('Datasheets.com lookup failed for %s: %s', mpn, exc)
         return None
 
 
@@ -158,5 +174,57 @@ def enrich_candidate(candidate: dict, *, settings: dict) -> dict:
                 candidate['parameters'].append(
                     {'name': p['name'], 'value': p['value'], 'source': secondary_source}
                 )
+
+    # Datasheets.com isn't a distributor (no SKU/pricing/supplier_links), so
+    # it's only ever used as a fallback to fill in whatever DigiKey/Mouser
+    # didn't have - most commonly the datasheet itself, since plenty of
+    # parts simply aren't carried by those distributors at all.
+    needs_datasheets_com_fallback = (
+        not candidate.get('datasheet_url')
+        or not candidate.get('image_url')
+        or primary is None
+    )
+
+    if needs_datasheets_com_fallback:
+        datasheets_result = _lookup_datasheets_com(settings, mpn)
+
+        if datasheets_result:
+            fallback_source = 'official:datasheets.com'
+
+            if not candidate.get('datasheet_url') and datasheets_result.get('datasheet_url'):
+                candidate['datasheet_url'] = {
+                    'value': datasheets_result['datasheet_url'],
+                    'source': fallback_source,
+                    'verified': True,
+                }
+
+            if not candidate.get('image_url') and datasheets_result.get('image_url'):
+                candidate['image_url'] = {
+                    'value': datasheets_result['image_url'],
+                    'source': fallback_source,
+                    'verified': True,
+                }
+
+            # Only used for manufacturer/description when DigiKey/Mouser had
+            # nothing at all - otherwise their data is trusted over this.
+            if primary is None:
+                if datasheets_result.get('manufacturer'):
+                    candidate['manufacturer'] = {
+                        'value': datasheets_result['manufacturer'],
+                        'source': fallback_source,
+                    }
+
+                if datasheets_result.get('description'):
+                    candidate['description'] = {
+                        'value': datasheets_result['description'],
+                        'source': fallback_source,
+                    }
+
+            existing_names = {p['name'] for p in candidate['parameters']}
+            for p in datasheets_result.get('parameters') or []:
+                if p['name'] not in existing_names:
+                    candidate['parameters'].append(
+                        {'name': p['name'], 'value': p['value'], 'source': fallback_source}
+                    )
 
     return candidate

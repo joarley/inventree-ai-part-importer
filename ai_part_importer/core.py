@@ -82,6 +82,17 @@ class AIPartImporter(SettingsMixin, UrlsMixin, UserInterfaceMixin, InvenTreePlug
             'protected': True,
             'required': False,
         },
+        'DATASHEETS_COM_API_KEY': {
+            'name': 'Datasheets.com API Key',
+            'description': (
+                'Optional - API key for datasheets.com (datasheets.com/account/api). '
+                'Used as a fallback specifically for the datasheet/image when '
+                'DigiKey/Mouser don\'t have one for a given part.'
+            ),
+            'default': '',
+            'protected': True,
+            'required': False,
+        },
         'PREFER_OFFICIAL_DATA': {
             'name': 'Prefer official supplier data',
             'description': (

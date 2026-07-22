@@ -3,7 +3,8 @@
 Identify electronic components from text and/or a photo via an OpenAI-compatible
 AI endpoint (LiteLLM, or any other server/proxy speaking the same
 `/chat/completions` protocol), optionally cross-check the result against the
-official DigiKey/Mouser APIs, then review and import them into InvenTree.
+official DigiKey/Mouser APIs (and Datasheets.com as a datasheet-specific
+fallback), then review and import them into InvenTree.
 
 Nothing is written to the InvenTree database until you explicitly confirm the
 draft on the review screen.
@@ -17,6 +18,9 @@ All planned phases (A-E) are implemented:
 - **Official DigiKey/Mouser enrichment** (optional) - when API credentials are
   configured, their data (datasheet, description, parameters, pricing,
   product link) overrides the AI's guesses, tagged and badged as such.
+- **Datasheets.com fallback** (optional) - when configured, fills in the
+  datasheet/image/specs specifically when DigiKey/Mouser didn't have one for
+  a given part (common for parts those distributors don't carry).
 - **"AI Enrich" panel** on the Part detail page, to fill gaps on an existing
   part without overwriting fields it already has.
 - A "Test AI connection" button and a lightweight audit trail (which fields
@@ -56,6 +60,9 @@ Under the plugin's settings (**Admin > Plugins > AI Part Importer**):
 - **DigiKey Client ID / Client Secret** (optional) - OAuth2 client-credentials
   for the DigiKey Product Information API v4.
 - **Mouser API Key** (optional) - key for the Mouser Search API.
+- **Datasheets.com API Key** (optional) - key from datasheets.com/account/api,
+  used only as a fallback for the datasheet/image/specs when DigiKey/Mouser
+  don't have one for a given part.
 - **Prefer official supplier data** (default on) - when DigiKey/Mouser
   credentials are set, let their data override the AI's guesses for
   description/manufacturer/datasheet.
@@ -94,6 +101,12 @@ InvenTree instance:
   for Mouser). If enrichment silently returns no data (or no image) once you
   add real credentials, compare `_normalize_product()` / `_normalize_part()`
   against the actual response bodies and adjust the field names.
+- `datasheets_client.py` - written directly from datasheets.com's published
+  API docs (endpoint, auth, field names all documented), but the exact
+  top-level JSON key wrapping the results array wasn't shown anywhere and is
+  guessed defensively (`results`/`data`/`items`/bare list). The raw first
+  result is logged at WARNING level either way, so a wrong guess there is
+  easy to spot and fix.
 - `importer.py: _download_and_attach_datasheet()` - assumes InvenTree 1.x's
   generic `common.models.Attachment` model (`model_type='manufacturerpart'`,
   `model_id=...`). If your instance uses a different attachment model shape,

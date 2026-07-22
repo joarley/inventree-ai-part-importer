@@ -33,6 +33,10 @@ def _normalize_part(part: dict) -> dict:
 
     return {
         'manufacturer': part.get('Manufacturer'),
+        # Mouser's Search API doesn't appear to expose a separate "detailed"
+        # description field the way DigiKey does (ProductDescription vs.
+        # DetailedDescription) - check the raw part logged below if you find
+        # one and want a fuller write-up here too.
         'description': part.get('Description'),
         'datasheet_url': part.get('DataSheetUrl'),
         'image_url': part.get('ImagePath'),

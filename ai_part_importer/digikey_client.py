@@ -70,9 +70,13 @@ def _normalize_product(product: dict) -> dict:
         for pb in first_variation.get('StandardPricing') or []
     ]
 
+    description = product.get('Description') or {}
+
     return {
         'manufacturer': (product.get('Manufacturer') or {}).get('Name'),
-        'description': (product.get('Description') or {}).get('ProductDescription'),
+        # DetailedDescription is the fuller write-up; ProductDescription is a
+        # terse one-liner - prefer the detailed one, falling back if empty.
+        'description': description.get('DetailedDescription') or description.get('ProductDescription'),
         'datasheet_url': product.get('DatasheetUrl'),
         'image_url': product.get('PhotoUrl'),
         'product_url': product.get('ProductUrl'),

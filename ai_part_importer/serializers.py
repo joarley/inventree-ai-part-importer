@@ -40,6 +40,9 @@ class CommitRequestSerializer(serializers.Serializer):
         choices=['link_only', 'download_attach', 'skip'], required=False, default='skip'
     )
     image_url = serializers.CharField(required=False, allow_blank=True, allow_null=True, default=None)
+    parameters = serializers.ListField(
+        child=serializers.DictField(), required=False, default=list
+    )
 
 
 class EnrichRequestSerializer(serializers.Serializer):

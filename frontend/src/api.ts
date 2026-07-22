@@ -35,6 +35,12 @@ export interface AlreadySet {
   mpn: boolean;
 }
 
+export interface ParameterEntry {
+  name: string;
+  value: string;
+  source: string;
+}
+
 export interface DraftCandidate {
   confidence: number;
   manufacturer: TaggedField | null;
@@ -44,7 +50,7 @@ export interface DraftCandidate {
   category_guess: { path: string; source: string } | null;
   datasheet_url: TaggedField | null;
   image_url: TaggedField | null;
-  parameters: { name: string; value: string; source: string }[];
+  parameters: ParameterEntry[];
   supplier_links: SupplierLink[];
   existing_matches: ExistingMatch[];
   already_set?: AlreadySet;
@@ -108,6 +114,7 @@ export interface CommitOptions {
   datasheetUrl?: string | null;
   datasheetAction?: DatasheetAction;
   imageUrl?: string | null;
+  parameters?: ParameterEntry[];
 }
 
 export async function commitDraft(
@@ -124,6 +131,7 @@ export async function commitDraft(
     datasheet_url: options.datasheetUrl ?? null,
     datasheet_action: options.datasheetAction ?? 'skip',
     image_url: options.imageUrl ?? null,
+    parameters: options.parameters ?? [],
   });
   return response.data;
 }

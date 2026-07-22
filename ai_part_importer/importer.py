@@ -51,6 +51,7 @@ def commit_draft(
     datasheet_url: str = None,
     datasheet_action: str = 'skip',
     image_url: str = None,
+    parameters: list = None,
 ):
     """Create a Part (+ ManufacturerPart, + SupplierParts, + datasheet), or,
     when `part_pk` is given, apply the same resolved fields to that existing
@@ -103,17 +104,10 @@ def commit_draft(
             purchaseable=True,
         )
 
-    # TODO: remove this DEBUG block once image handling is confirmed working
-    # end-to-end - server-side logging has been unreliable to inspect here,
-    # so route the outcome through the same warnings list the UI already shows.
     if image_url:
         error = _apply_part_image(part, image_url)
         if error:
             warnings.append(f'Could not set part image: {error}')
-        else:
-            warnings.append(f'DEBUG: part image was set successfully from {image_url}')
-    else:
-        warnings.append('DEBUG: no image_url was received by /commit')
 
     if datasheet_url and datasheet_action != 'skip':
         # Also set the Part's own link, not just the ManufacturerPart's -
@@ -136,6 +130,11 @@ def commit_draft(
 
     for link in supplier_links or []:
         _create_supplier_part(part, manufacturer_part, link)
+
+    if parameters:
+        failed = _apply_parameters(part, parameters)
+        if failed:
+            warnings.append(f'Could not import {failed} parameter(s) - see part manually')
 
     _record_audit_trail(part, resolved=resolved, user=user)
 
@@ -246,6 +245,38 @@ def _download_and_attach_datasheet(manufacturer_part, datasheet_url: str):
         attachment=ContentFile(response.content, name=filename),
         comment='Datasheet (AI Part Importer)',
     )
+
+
+def _apply_parameters(part, parameters: list) -> int:
+    """Import {"name", "value"} attribute pairs as PartParameters, creating
+    the PartParameterTemplate if it doesn't exist yet. Never overwrites a
+    parameter the Part already has a value for (same "don't silently replace
+    existing data" rule used for enrich mode elsewhere). Returns how many
+    entries failed to import (0 if all went fine)."""
+
+    from part.models import PartParameter, PartParameterTemplate
+
+    failed = 0
+
+    for p in parameters:
+        name = (p.get('name') or '').strip()
+        value = (p.get('value') or '').strip()
+
+        if not name or not value:
+            continue
+
+        try:
+            template, _created = PartParameterTemplate.objects.get_or_create(name=name)
+            PartParameter.objects.get_or_create(
+                part=part,
+                template=template,
+                defaults={'data': value},
+            )
+        except Exception as exc:  # noqa: BLE001 - one bad parameter shouldn't break the commit
+            logger.warning('Could not import parameter %r=%r: %s', name, value, exc)
+            failed += 1
+
+    return failed
 
 
 def _create_supplier_part(part, manufacturer_part, link: dict):

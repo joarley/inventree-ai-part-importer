@@ -4,6 +4,7 @@ import {
   Anchor,
   Button,
   Checkbox,
+  Collapse,
   Group,
   Image,
   Radio,
@@ -13,6 +14,7 @@ import {
   Textarea,
   UnstyledButton,
 } from '@mantine/core';
+import { useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import type { InvenTreePluginContext } from '@inventreedb/ui';
 
@@ -21,6 +23,7 @@ import {
   type CommitResult,
   type DatasheetAction,
   type DraftCandidate,
+  type ParameterEntry,
   type SupplierLink,
   commitDraft,
   searchCategories,
@@ -66,6 +69,11 @@ export function DraftReviewForm({
   );
   const [useOfficialImage, setUseOfficialImage] = useState(Boolean(candidate.image_url));
 
+  const [selectedParameters, setSelectedParameters] = useState<Set<string>>(
+    new Set((candidate.parameters ?? []).map((p) => p.name)),
+  );
+  const [parametersOpened, { toggle: toggleParametersOpened }] = useDisclosure(false);
+
   const [submitting, setSubmitting] = useState(false);
 
   const canCommit = Boolean(name.trim()) && Boolean(category) && Boolean(manufacturer.trim() || mpn.trim());
@@ -80,6 +88,27 @@ export function DraftReviewForm({
       }
       return next;
     });
+  };
+
+  const toggleParameter = (name: string) => {
+    setSelectedParameters((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) {
+        next.delete(name);
+      } else {
+        next.add(name);
+      }
+      return next;
+    });
+  };
+
+  const allParameterNames = (candidate.parameters ?? []).map((p) => p.name);
+  const allParametersSelected =
+    allParameterNames.length > 0 && allParameterNames.every((n) => selectedParameters.has(n));
+  const someParametersSelected = allParameterNames.some((n) => selectedParameters.has(n));
+
+  const toggleAllParameters = () => {
+    setSelectedParameters(allParametersSelected ? new Set() : new Set(allParameterNames));
   };
 
   const runCategorySearch = async () => {
@@ -105,6 +134,10 @@ export function DraftReviewForm({
         selectedSuppliers.has(l.supplier),
       );
 
+      const parameters: ParameterEntry[] = (candidate.parameters ?? []).filter((p) =>
+        selectedParameters.has(p.name),
+      );
+
       const result = await commitDraft(
         context,
         category.pk,
@@ -120,6 +153,7 @@ export function DraftReviewForm({
           datasheetUrl: candidate.datasheet_url?.value ?? null,
           datasheetAction,
           imageUrl: useOfficialImage ? candidate.image_url?.value ?? null : null,
+          parameters,
         },
       );
 
@@ -292,6 +326,36 @@ export function DraftReviewForm({
               )}
             </Group>
           ))}
+        </Stack>
+      )}
+
+      {(candidate.parameters ?? []).length > 0 && (
+        <Stack gap={4}>
+          <Group justify="space-between">
+            <Checkbox
+              checked={allParametersSelected}
+              indeterminate={someParametersSelected && !allParametersSelected}
+              onChange={toggleAllParameters}
+              label={`Parameters (${selectedParameters.size}/${allParameterNames.length})`}
+            />
+            <Anchor size="xs" onClick={toggleParametersOpened} component="button" type="button">
+              {parametersOpened ? 'Hide' : 'Show'} details
+            </Anchor>
+          </Group>
+          <Collapse expanded={parametersOpened}>
+            <Stack gap={4} pl="lg">
+              {candidate.parameters.map((p) => (
+                <Group key={p.name} gap="xs">
+                  <Checkbox
+                    checked={selectedParameters.has(p.name)}
+                    onChange={() => toggleParameter(p.name)}
+                    label={`${p.name}: ${p.value}`}
+                  />
+                  <SourceBadge source={p.source} />
+                </Group>
+              ))}
+            </Stack>
+          </Collapse>
         </Stack>
       )}
 

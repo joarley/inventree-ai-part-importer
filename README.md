@@ -62,10 +62,10 @@ Under the plugin's settings (**Admin > Plugins > AI Part Importer**):
 
 ## Usage
 
-- **New part**: while browsing a Part category or a Stock location, open the
-  **"Import via AI"** tab/panel and click the button to open the flow in a
-  modal. Type a free-text description/partial part number and/or attach a
-  photo (max 8MB,
+- **New part**: while browsing a Part category or a Stock location, click the
+  **"Import via AI"** tab/panel - it opens the flow directly in a modal (no
+  extra click needed). Type a free-text description/partial part number
+  and/or attach a photo (max 8MB,
   resized/recompressed server-side - this photo is only used to identify the
   component, it is not itself saved anywhere), click **Identify**,
   review/edit every field (each is badged by source: AI / DigiKey / Mouser /

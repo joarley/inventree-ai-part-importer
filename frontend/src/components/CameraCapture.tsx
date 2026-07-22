@@ -11,36 +11,41 @@ interface Props {
  */
 export function CameraCapture({ onCapture }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const [active, setActive] = useState(false);
+  const [stream, setStream] = useState<MediaStream | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const stop = () => {
-    streamRef.current?.getTracks().forEach((track) => track.stop());
-    streamRef.current = null;
-    setActive(false);
-  };
+  // Attaches the stream to the <video> element once it actually exists in
+  // the DOM (it only mounts once `stream` is set, so this can't run any
+  // earlier), and releases the camera whenever the stream changes or this
+  // component unmounts.
+  useEffect(() => {
+    if (!stream) {
+      return;
+    }
 
-  // Make sure the camera is released if the component unmounts while active
-  // (e.g. the user closes the modal mid-capture).
-  useEffect(() => stop, []);
+    if (videoRef.current) {
+      videoRef.current.srcObject = stream;
+      videoRef.current.play().catch(() => {});
+    }
+
+    return () => {
+      stream.getTracks().forEach((track) => track.stop());
+    };
+  }, [stream]);
 
   const start = async () => {
     setError(null);
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      streamRef.current = stream;
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-
-      setActive(true);
+      const newStream = await navigator.mediaDevices.getUserMedia({ video: true });
+      setStream(newStream);
     } catch (err: any) {
       setError(err?.message ?? 'Could not access the camera');
     }
+  };
+
+  const stop = () => {
+    setStream(null);
   };
 
   const capture = () => {
@@ -66,7 +71,7 @@ export function CameraCapture({ onCapture }: Props) {
     );
   };
 
-  if (!active) {
+  if (!stream) {
     return (
       <Stack gap={4}>
         {error && (

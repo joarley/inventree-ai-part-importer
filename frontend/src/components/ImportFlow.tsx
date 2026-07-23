@@ -151,7 +151,8 @@ export function ImportFlow({ context }: Props) {
             <Image
               src={imagePreviewUrl}
               alt="Source"
-              w={260}
+              w={420}
+              mah={480}
               fit="contain"
               radius="sm"
               style={{ flexShrink: 0 }}

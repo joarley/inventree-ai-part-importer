@@ -18,7 +18,7 @@ function AIPartImporterImportPanel({ context }: { context: InvenTreePluginContex
   };
 
   return (
-    <Modal opened={opened} onClose={handleClose} title="Import via AI" size="xl">
+    <Modal opened={opened} onClose={handleClose} title="Import via AI" size="1100px">
       <ImportFlow context={context} />
     </Modal>
   );

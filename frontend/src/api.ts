@@ -146,7 +146,9 @@ export async function searchCategories(
   context: InvenTreePluginContext,
   search: string,
 ): Promise<CategoryMatch[]> {
-  const params: Record<string, string | number> = { limit: 20 };
+  // High limit so the default (no search term) list covers essentially every
+  // category in a typical instance, rather than just the first page.
+  const params: Record<string, string | number> = { limit: 250 };
   if (search) {
     params.search = search;
   }

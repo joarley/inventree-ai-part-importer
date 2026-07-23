@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   Anchor,
@@ -8,13 +8,14 @@ import {
   Group,
   Image,
   Radio,
+  Select,
   Stack,
   Text,
   TextInput,
   Textarea,
   UnstyledButton,
 } from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
+import { useDebouncedValue, useDisclosure } from '@mantine/hooks';
 import { notifications } from '@mantine/notifications';
 import type { InvenTreePluginContext } from '@inventreedb/ui';
 
@@ -57,6 +58,7 @@ export function DraftReviewForm({
   const [categorySearch, setCategorySearch] = useState(
     initialCategory?.pathstring ?? candidate.category_guess?.path ?? '',
   );
+  const [debouncedCategorySearch] = useDebouncedValue(categorySearch, 300);
   const [categoryResults, setCategoryResults] = useState<CategoryMatch[]>([]);
   const [category, setCategory] = useState<CategoryMatch | null>(initialCategory);
   const [searching, setSearching] = useState(false);
@@ -111,17 +113,41 @@ export function DraftReviewForm({
     setSelectedParameters(allParametersSelected ? new Set() : new Set(allParameterNames));
   };
 
-  const runCategorySearch = async () => {
+  // Keep the currently-selected category visible in the dropdown even if a
+  // new search's results don't happen to include it anymore.
+  const categoryOptions =
+    category && !categoryResults.some((c) => c.pk === category.pk)
+      ? [category, ...categoryResults]
+      : categoryResults;
+
+  // Runs on mount (so there's something to pick from immediately, without
+  // typing anything first) and again whenever the search text settles.
+  useEffect(() => {
+    let cancelled = false;
+
     setSearching(true);
-    try {
-      const results = await searchCategories(context, categorySearch);
-      setCategoryResults(results);
-    } catch {
-      notifications.show({ title: 'Error', message: 'Failed to search categories', color: 'red' });
-    } finally {
-      setSearching(false);
-    }
-  };
+    searchCategories(context, debouncedCategorySearch)
+      .then((results) => {
+        if (!cancelled) {
+          setCategoryResults(results);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          notifications.show({ title: 'Error', message: 'Failed to search categories', color: 'red' });
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setSearching(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedCategorySearch]);
 
   const handleCommit = async () => {
     if (!category) {
@@ -242,31 +268,21 @@ export function DraftReviewForm({
         <Text size="sm" fw={500}>
           Category {candidate.category_guess ? '(AI suggestion, just a starting point for the search)' : ''}
         </Text>
-        <Group>
-          <TextInput
-            flex={1}
-            value={categorySearch}
-            onChange={(e) => setCategorySearch(e.currentTarget.value)}
-            placeholder="Search category..."
-          />
-          <Button variant="light" loading={searching} onClick={runCategorySearch}>
-            Search
-          </Button>
-        </Group>
-        {category && (
-          <Alert color="green" py={4}>
-            Selected: {category.pathstring ?? category.name}
-          </Alert>
-        )}
-        {categoryResults.length > 0 && (
-          <Stack gap={2}>
-            {categoryResults.map((c) => (
-              <UnstyledButton key={c.pk} onClick={() => setCategory(c)}>
-                <Text size="sm">{c.pathstring ?? c.name}</Text>
-              </UnstyledButton>
-            ))}
-          </Stack>
-        )}
+        <Select
+          placeholder="Type to search, or open the dropdown to browse..."
+          searchable
+          searchValue={categorySearch}
+          onSearchChange={setCategorySearch}
+          data={categoryOptions.map((c) => ({ value: String(c.pk), label: c.pathstring ?? c.name ?? '' }))}
+          value={category ? String(category.pk) : null}
+          onChange={(value) => {
+            const found = categoryOptions.find((c) => String(c.pk) === value);
+            setCategory(found ?? null);
+          }}
+          nothingFoundMessage={searching ? 'Searching...' : 'No matching category'}
+          maxDropdownHeight={260}
+          clearable
+        />
       </Stack>
 
       {candidate.datasheet_url?.value && (

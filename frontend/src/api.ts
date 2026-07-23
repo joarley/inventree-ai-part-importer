@@ -146,13 +146,12 @@ export async function searchCategories(
   context: InvenTreePluginContext,
   search: string,
 ): Promise<CategoryMatch[]> {
-  if (!search) {
-    return [];
+  const params: Record<string, string | number> = { limit: 20 };
+  if (search) {
+    params.search = search;
   }
 
-  const response = await context.api.get('/api/part/category/', {
-    params: { search, limit: 10 },
-  });
+  const response = await context.api.get('/api/part/category/', { params });
 
   const results = response.data.results ?? response.data ?? [];
 

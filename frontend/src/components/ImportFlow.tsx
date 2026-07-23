@@ -145,36 +145,45 @@ export function ImportFlow({ context }: Props) {
         </>
       )}
 
-      {(step.name === 'picking' || step.name === 'reviewing') && (image || text) && (
-        <Card withBorder padding="xs">
-          <Group gap="xs" align="flex-start">
-            {imagePreviewUrl && (
-              <Image src={imagePreviewUrl} alt="Source" w={70} h={70} fit="contain" radius="sm" />
+      {(step.name === 'picking' || step.name === 'reviewing') && (
+        <Group align="flex-start" wrap="nowrap" gap="md">
+          {imagePreviewUrl && (
+            <Image
+              src={imagePreviewUrl}
+              alt="Source"
+              w={260}
+              fit="contain"
+              radius="sm"
+              style={{ flexShrink: 0 }}
+            />
+          )}
+          <Stack gap="sm" style={{ flex: 1, minWidth: 0 }}>
+            {text && (
+              <Card withBorder padding="xs">
+                <Text size="xs" fw={500} c="dimmed">
+                  Identified from:
+                </Text>
+                <Text size="sm">{text}</Text>
+              </Card>
             )}
-            <Stack gap={0} style={{ flex: 1 }}>
-              <Text size="xs" fw={500} c="dimmed">
-                Identified from:
-              </Text>
-              {text && <Text size="sm">{text}</Text>}
-            </Stack>
-          </Group>
-        </Card>
-      )}
 
-      {step.name === 'picking' && (
-        <CandidatePicker
-          candidates={step.candidates}
-          onPick={(candidate) => setStep({ name: 'reviewing', candidate })}
-        />
-      )}
+            {step.name === 'picking' && (
+              <CandidatePicker
+                candidates={step.candidates}
+                onPick={(candidate) => setStep({ name: 'reviewing', candidate })}
+              />
+            )}
 
-      {step.name === 'reviewing' && (
-        <DraftReviewForm
-          context={context}
-          candidate={step.candidate}
-          onBack={reset}
-          onCommitted={(result) => setStep({ name: 'done', result })}
-        />
+            {step.name === 'reviewing' && (
+              <DraftReviewForm
+                context={context}
+                candidate={step.candidate}
+                onBack={reset}
+                onCommitted={(result) => setStep({ name: 'done', result })}
+              />
+            )}
+          </Stack>
+        </Group>
       )}
 
       {step.name === 'done' && (

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Alert, Button, FileInput, Group, Image, Stack, Text, Textarea } from '@mantine/core';
+import { Alert, Button, Card, FileInput, Group, Image, Stack, Text, Textarea } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 
 import type { InvenTreePluginContext } from '@inventreedb/ui';
@@ -143,6 +143,22 @@ export function ImportFlow({ context }: Props) {
             Identify
           </Button>
         </>
+      )}
+
+      {(step.name === 'picking' || step.name === 'reviewing') && (image || text) && (
+        <Card withBorder padding="xs">
+          <Group gap="xs" align="flex-start">
+            {imagePreviewUrl && (
+              <Image src={imagePreviewUrl} alt="Source" w={70} h={70} fit="contain" radius="sm" />
+            )}
+            <Stack gap={0} style={{ flex: 1 }}>
+              <Text size="xs" fw={500} c="dimmed">
+                Identified from:
+              </Text>
+              {text && <Text size="sm">{text}</Text>}
+            </Stack>
+          </Group>
+        </Card>
       )}
 
       {step.name === 'picking' && (

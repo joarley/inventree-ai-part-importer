@@ -101,12 +101,6 @@ InvenTree instance:
   for Mouser). If enrichment silently returns no data (or no image) once you
   add real credentials, compare `_normalize_product()` / `_normalize_part()`
   against the actual response bodies and adjust the field names.
-- `datasheets_client.py` - written directly from datasheets.com's published
-  API docs (endpoint, auth, field names all documented), but the exact
-  top-level JSON key wrapping the results array wasn't shown anywhere and is
-  guessed defensively (`results`/`data`/`items`/bare list). The raw first
-  result is logged at WARNING level either way, so a wrong guess there is
-  easy to spot and fix.
 - `importer.py: _download_and_attach_datasheet()` - assumes InvenTree 1.x's
   generic `common.models.Attachment` model (`model_type='manufacturerpart'`,
   `model_id=...`). If your instance uses a different attachment model shape,
